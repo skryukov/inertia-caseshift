@@ -2,7 +2,7 @@ export type { CaseShiftOptions } from './transforms'
 export { transformPageResponse } from './response'
 import { transformPageResponse } from './response'
 import { transformRequestData, transformRequestHeaders, transformRequestUrl } from './request'
-import type { CaseShiftOptions } from './transforms'
+import { deepCamelCaseKeys, type CaseShiftOptions } from './transforms'
 
 /**
  * Transform an Inertia page object in-place from snake_case to camelCase.
@@ -59,17 +59,23 @@ export type HttpInterface = {
  * @returns Cleanup function that removes the interceptors
  */
 function transformResponseData(response: any, options?: CaseShiftOptions): void {
-  if (typeof response.data === 'string') {
+  const wasString = typeof response.data === 'string'
+  let data = response.data
+
+  if (wasString) {
     try {
-      response.data = JSON.parse(response.data)
+      data = JSON.parse(data)
     } catch {
       return
     }
   }
 
-  const data = response.data
   if (data && typeof data === 'object' && 'component' in data) {
     transformPageResponse(data, options)
+    response.data = data
+  } else if (data && typeof data === 'object') {
+    data = deepCamelCaseKeys(data, options)
+    response.data = wasString ? JSON.stringify(data) : data
   }
 }
 

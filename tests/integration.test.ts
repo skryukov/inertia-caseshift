@@ -101,17 +101,18 @@ describe('setupCaseShift', () => {
       })
     })
 
-    it('leaves non-Inertia responses untouched', async () => {
+    it('transforms non-Inertia JSON string responses and re-serializes', async () => {
       setupCaseShift(http)
 
-      const response = { status: 200, data: JSON.stringify({ some_data: 'value' }), headers: {} }
+      const response = { status: 200, data: JSON.stringify({ some_data: 'value', nested_obj: { inner_key: 1 } }), headers: {} }
       let result = response as any
       for (const handler of [http.onResponse.mock.calls[0][0]]) {
         result = await handler(result)
       }
 
-      // No 'component' key, so data should be parsed but not transformed
-      expect(result.data).toEqual({ some_data: 'value' })
+      // Keys are camelCased but data stays as a string so useHttp can JSON.parse it
+      expect(typeof result.data).toBe('string')
+      expect(JSON.parse(result.data)).toEqual({ someData: 'value', nestedObj: { innerKey: 1 } })
     })
 
     it('handles non-JSON response data gracefully', async () => {
@@ -288,12 +289,14 @@ describe('setupCaseShift', () => {
       })
     })
 
-    it('handles non-Inertia error responses gracefully', async () => {
+    it('transforms non-Inertia error responses and re-serializes', async () => {
       setupCaseShift(http)
 
-      const error = await http.simulateError(500, { error: 'Internal Server Error' })
+      const error = await http.simulateError(500, { error_message: 'Internal Server Error' })
 
-      expect(error.response.data).toEqual({ error: 'Internal Server Error' })
+      // Keys are camelCased but data stays as a string
+      expect(typeof error.response.data).toBe('string')
+      expect(JSON.parse(error.response.data)).toEqual({ errorMessage: 'Internal Server Error' })
     })
 
     it('handles error without response property', async () => {
