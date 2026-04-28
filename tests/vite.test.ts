@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { parse } from 'acorn'
 import caseShift from '../src/vite'
 
@@ -24,6 +24,22 @@ describe('caseShift vite plugin', () => {
   it('skips files that already import inertia-caseshift', () => {
     const code = `import { setupCaseShift } from 'inertia-caseshift'\ncreateInertiaApp({ resolve: fn })`
     expect(transform(code)).toBeNull()
+  })
+
+  it('silently returns null when createInertiaApp is referenced but not called at top level', () => {
+    // e.g. @inertiajs/react/dist/index.js, which declares and re-exports
+    // createInertiaApp but never calls it.
+    const code = [
+      `async function createInertiaApp(options) { return options }`,
+      `export { createInertiaApp }`,
+    ].join('\n')
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      expect(transform(code)).toBeNull()
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   describe('CSR transform', () => {

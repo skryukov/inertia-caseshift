@@ -41,12 +41,10 @@ export default function caseShift(options: CaseShiftPluginOptions = {}): Plugin 
         return transformCSR(code, imports, setup, inertiaCall, appId, optsArg)
       }
 
-      console.warn(
-        '[inertia-caseshift] Found createInertiaApp but could not locate the call site to transform. ' +
-        'The plugin expects a top-level createInertiaApp({ ... }) call with an object literal argument. ' +
-        'If you are using a non-standard setup, use setupCaseShift(http) and transformInitialPage() manually.',
-      )
-
+      // The substring check is a coarse pre-filter. Files that mention
+      // `createInertiaApp` without calling it at the top level — declarations,
+      // re-exports, library bundles like `@inertiajs/react/dist/index.js` —
+      // reach here normally. Treat that as "nothing to transform", not an error.
       return null
     },
   }
