@@ -1,11 +1,20 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { parse } from 'acorn'
 import caseShift from '../src/vite'
 
-function transform(code: string, options?: { id?: string, rawKeys?: string[], skipKeys?: string[] }): string | null {
+function transform(
+  code: string,
+  options?: { id?: string, rawKeys?: string[], skipKeys?: string[] },
+  resourceId = 'app.tsx',
+): string | null {
   const plugin = caseShift(options)
+  const hook = (plugin as any).transform
+  const filter = hook.filter
+  if (filter?.id?.exclude?.test(resourceId)) return null
+  if (filter?.code?.include && !filter.code.include.test(code)) return null
+  if (filter?.code?.exclude?.test(code)) return null
   const ctx = { parse: (c: string) => parse(c, { ecmaVersion: 'latest', sourceType: 'module' }) }
-  const result = (plugin as any).transform.call(ctx, code, 'app.tsx')
+  const result = hook.handler.call(ctx, code)
   if (result === null) return null
   return typeof result === 'string' ? result : result.code
 }
@@ -24,6 +33,23 @@ describe('caseShift vite plugin', () => {
   it('skips files that already import inertia-caseshift', () => {
     const code = `import { setupCaseShift } from 'inertia-caseshift'\ncreateInertiaApp({ resolve: fn })`
     expect(transform(code)).toBeNull()
+  })
+
+  it('skips files under node_modules', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const code = `export { createInertiaApp } from '@inertiajs/react'`
+    expect(transform(code, undefined, '/project/node_modules/@inertiajs/react/dist/index.js')).toBeNull()
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('warns when user code references createInertiaApp without a call site', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const code = `export { createInertiaApp } from '@inertiajs/react'`
+    expect(transform(code)).toBeNull()
+    expect(warn).toHaveBeenCalledOnce()
+    expect(warn.mock.calls[0][0]).toContain('could not locate the call site')
+    warn.mockRestore()
   })
 
   describe('CSR transform', () => {

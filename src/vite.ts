@@ -15,39 +15,42 @@ export default function caseShift(options: CaseShiftPluginOptions = {}): Plugin 
   return {
     name: 'inertia-caseshift',
     enforce: 'post',
-    transform(code) {
-      if (!code.includes('createInertiaApp')) return null
-      if (code.includes('inertia-caseshift')) return null
+    transform: {
+      filter: {
+        id: { exclude: /\/node_modules\// },
+        code: { include: /createInertiaApp/, exclude: /inertia-caseshift/ },
+      },
+      handler(code) {
+        let ast: any
+        try {
+          ast = (this as any).parse(code)
+        } catch {
+          return null
+        }
 
-      let ast: any
-      try {
-        ast = (this as any).parse(code)
-      } catch {
+        const imports =
+          `import * as __cs from 'inertia-caseshift'\n` +
+          `import * as __csCore from '@inertiajs/core'\n`
+        const setup = `__cs.setupCaseShift(__csCore.http${optsArg})`
+
+        const renderPage = findRenderPage(ast)
+        if (renderPage) {
+          return transformSSR(code, imports, setup, renderPage, optsArg)
+        }
+
+        const inertiaCall = findInertiaCall(ast)
+        if (inertiaCall) {
+          return transformCSR(code, imports, setup, inertiaCall, appId, optsArg)
+        }
+
+        console.warn(
+          '[inertia-caseshift] Found createInertiaApp but could not locate the call site to transform. ' +
+          'The plugin expects a top-level createInertiaApp({ ... }) call with an object literal argument. ' +
+          'If you are using a non-standard setup, use setupCaseShift(http) and transformInitialPage() manually.',
+        )
+
         return null
-      }
-
-      const imports =
-        `import * as __cs from 'inertia-caseshift'\n` +
-        `import * as __csCore from '@inertiajs/core'\n`
-      const setup = `__cs.setupCaseShift(__csCore.http${optsArg})`
-
-      const renderPage = findRenderPage(ast)
-      if (renderPage) {
-        return transformSSR(code, imports, setup, renderPage, optsArg)
-      }
-
-      const inertiaCall = findInertiaCall(ast)
-      if (inertiaCall) {
-        return transformCSR(code, imports, setup, inertiaCall, appId, optsArg)
-      }
-
-      console.warn(
-        '[inertia-caseshift] Found createInertiaApp but could not locate the call site to transform. ' +
-        'The plugin expects a top-level createInertiaApp({ ... }) call with an object literal argument. ' +
-        'If you are using a non-standard setup, use setupCaseShift(http) and transformInitialPage() manually.',
-      )
-
-      return null
+      },
     },
   }
 }
