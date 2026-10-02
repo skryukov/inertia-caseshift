@@ -80,6 +80,7 @@ No backend changes needed in either case.
 | `scrollProps` keys | `{ feed_items: {...} }` | `{ feedItems: {...} }` |
 | `onceProps` keys | `{ cached_data: {...} }` | `{ cachedData: {...} }` |
 | `sharedProps` | `["current_user"]` | `["currentUser"]` |
+| `rescuedProps` | `["user_stats"]` | `["userStats"]` |
 
 ### Request (Frontend -> Backend)
 
