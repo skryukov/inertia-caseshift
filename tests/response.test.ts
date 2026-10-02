@@ -295,6 +295,48 @@ describe('transformPageResponse', () => {
     })
   })
 
+  describe('metadata with options', () => {
+    it('keeps skipKeys paths matching the untouched props', () => {
+      const data = {
+        component: 'Page',
+        props: { editor_config: { font_size: 14 } },
+        deferredProps: { default: ['editor_config'] },
+        mergeProps: ['editor_config'],
+        prependProps: ['editor_config'],
+        deepMergeProps: ['editor_config'],
+        matchPropsOn: ['editor_config.font_size'],
+        scrollProps: { editor_config: { pageName: 'page' } },
+        onceProps: { editor_config: { prop: 'editor_config' } },
+        sharedProps: ['editor_config'],
+        rescuedProps: ['editor_config'],
+      }
+      transformPageResponse(data, { skipKeys: ['editorConfig'] })
+      expect(data.props).toEqual({ editor_config: { font_size: 14 } })
+      expect(data.deferredProps).toEqual({ default: ['editor_config'] })
+      expect(data.mergeProps).toEqual(['editor_config'])
+      expect(data.prependProps).toEqual(['editor_config'])
+      expect(data.deepMergeProps).toEqual(['editor_config'])
+      expect(data.matchPropsOn).toEqual(['editor_config.font_size'])
+      expect(data.scrollProps).toEqual({ editor_config: { pageName: 'page' } })
+      expect(data.onceProps).toEqual({ editor_config: { prop: 'editor_config' } })
+      expect(data.sharedProps).toEqual(['editor_config'])
+      expect(data.rescuedProps).toEqual(['editor_config'])
+    })
+
+    it('keeps nested rawKeys paths matching the untouched values', () => {
+      const data = {
+        component: 'Page',
+        props: { editor_config: { recent_files: [] } },
+        mergeProps: ['editor_config.recent_files'],
+        deferredProps: { default: ['user_stats'] },
+      }
+      transformPageResponse(data, { rawKeys: ['editorConfig'] })
+      expect(data.props).toEqual({ editorConfig: { recent_files: [] } })
+      expect(data.mergeProps).toEqual(['editorConfig.recent_files'])
+      expect(data.deferredProps).toEqual({ default: ['userStats'] })
+    })
+  })
+
   describe('non-Inertia metadata is untouched', () => {
     it('does not transform component name', () => {
       const data = {

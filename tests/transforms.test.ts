@@ -140,6 +140,24 @@ describe('camelCasePath', () => {
   it('handles path with no underscores', () => {
     expect(camelCasePath('items.0.id')).toBe('items.0.id')
   })
+
+  it('preserves skipKeys segments and everything after them', () => {
+    expect(camelCasePath('editor_config.font_size', { skipKeys: ['editorConfig'] })).toBe(
+      'editor_config.font_size',
+    )
+    expect(camelCasePath('user_profile.editor_config.font_size', { skipKeys: ['editorConfig'] })).toBe(
+      'userProfile.editor_config.font_size',
+    )
+  })
+
+  it('transforms rawKeys segments but preserves everything after them', () => {
+    expect(camelCasePath('editor_config.font_size', { rawKeys: ['editorConfig'] })).toBe(
+      'editorConfig.font_size',
+    )
+    expect(camelCasePath('user_profile.editor_config.font_size', { rawKeys: ['editorConfig'] })).toBe(
+      'userProfile.editorConfig.font_size',
+    )
+  })
 })
 
 describe('snakeCasePath', () => {

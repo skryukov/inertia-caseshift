@@ -1,4 +1,4 @@
-import { camelCase, camelCasePath, deepCamelCaseKeys, type CaseShiftOptions } from './transforms'
+import { camelCasePath, deepCamelCaseKeys, type CaseShiftOptions } from './transforms'
 
 interface PageResponse {
   component?: string
@@ -23,6 +23,8 @@ interface PageResponse {
  * - Metadata path strings: camelCase each dot-separated segment
  */
 export function transformPageResponse(data: PageResponse, options?: CaseShiftOptions): void {
+  const camelPath = (path: string) => camelCasePath(path, options)
+
   if (data.props) {
     data.props = deepCamelCaseKeys(data.props, options) as Record<string, unknown>
   }
@@ -33,46 +35,46 @@ export function transformPageResponse(data: PageResponse, options?: CaseShiftOpt
 
   if (data.deferredProps) {
     for (const group of Object.keys(data.deferredProps)) {
-      data.deferredProps[group] = data.deferredProps[group].map(camelCasePath)
+      data.deferredProps[group] = data.deferredProps[group].map(camelPath)
     }
   }
 
   if (data.mergeProps) {
-    data.mergeProps = data.mergeProps.map(camelCasePath)
+    data.mergeProps = data.mergeProps.map(camelPath)
   }
 
   if (data.prependProps) {
-    data.prependProps = data.prependProps.map(camelCasePath)
+    data.prependProps = data.prependProps.map(camelPath)
   }
 
   if (data.deepMergeProps) {
-    data.deepMergeProps = data.deepMergeProps.map(camelCasePath)
+    data.deepMergeProps = data.deepMergeProps.map(camelPath)
   }
 
   if (data.matchPropsOn) {
-    data.matchPropsOn = data.matchPropsOn.map(camelCasePath)
+    data.matchPropsOn = data.matchPropsOn.map(camelPath)
   }
 
   if (data.scrollProps) {
     data.scrollProps = Object.fromEntries(
-      Object.entries(data.scrollProps).map(([k, v]) => [camelCasePath(k), v]),
+      Object.entries(data.scrollProps).map(([k, v]) => [camelPath(k), v]),
     )
   }
 
   if (data.onceProps) {
     data.onceProps = Object.fromEntries(
       Object.entries(data.onceProps).map(([k, v]) => [
-        camelCasePath(k),
-        v.prop ? { ...v, prop: camelCasePath(v.prop) } : v,
+        camelPath(k),
+        v.prop ? { ...v, prop: camelPath(v.prop) } : v,
       ]),
     )
   }
 
   if (data.sharedProps) {
-    data.sharedProps = data.sharedProps.map(camelCase)
+    data.sharedProps = data.sharedProps.map(camelPath)
   }
 
   if (data.rescuedProps) {
-    data.rescuedProps = data.rescuedProps.map(camelCasePath)
+    data.rescuedProps = data.rescuedProps.map(camelPath)
   }
 }
