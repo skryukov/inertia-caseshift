@@ -183,6 +183,14 @@ describe('transformRequestHeaders', () => {
     expect(headers['X-Inertia-Except-Once-Props']).toBe('cached_stats,user_preferences')
   })
 
+  it('transforms Precognition-Validate-Only field names', () => {
+    const headers: Record<string, string> = {
+      'Precognition-Validate-Only': 'companyName,lineItems.*.unitPrice',
+    }
+    transformRequestHeaders(headers)
+    expect(headers['Precognition-Validate-Only']).toBe('company_name,line_items.*.unit_price')
+  })
+
   it('transforms nested dot-notation paths in headers', () => {
     const headers: Record<string, string> = {
       'X-Inertia-Partial-Data': 'userProfile.recentActivity,feedItems',
