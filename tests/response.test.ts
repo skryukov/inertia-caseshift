@@ -273,6 +273,28 @@ describe('transformPageResponse', () => {
     })
   })
 
+  describe('rescuedProps', () => {
+    it('camelCases rescued prop key names', () => {
+      const data = {
+        component: 'Page',
+        props: {},
+        rescuedProps: ['user_stats', 'recent_posts'],
+      }
+      transformPageResponse(data)
+      expect(data.rescuedProps).toEqual(['userStats', 'recentPosts'])
+    })
+
+    it('handles nested rescued prop key names', () => {
+      const data = {
+        component: 'Page',
+        props: {},
+        rescuedProps: ['user_profile.recent_activity'],
+      }
+      transformPageResponse(data)
+      expect(data.rescuedProps).toEqual(['userProfile.recentActivity'])
+    })
+  })
+
   describe('non-Inertia metadata is untouched', () => {
     it('does not transform component name', () => {
       const data = {

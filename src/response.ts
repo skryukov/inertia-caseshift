@@ -12,6 +12,7 @@ interface PageResponse {
   scrollProps?: Record<string, unknown>
   onceProps?: Record<string, { prop?: string; expiresAt?: number }>
   sharedProps?: string[]
+  rescuedProps?: string[]
   [key: string]: unknown
 }
 
@@ -69,5 +70,9 @@ export function transformPageResponse(data: PageResponse, options?: CaseShiftOpt
 
   if (data.sharedProps) {
     data.sharedProps = data.sharedProps.map(camelCase)
+  }
+
+  if (data.rescuedProps) {
+    data.rescuedProps = data.rescuedProps.map(camelCasePath)
   }
 }
