@@ -98,6 +98,8 @@ No backend changes needed in either case.
 
 Error responses (4xx/5xx) containing Inertia page objects are also transformed.
 
+`useHttp` requests go through the same HTTP handlers, so their bodies, query params, and JSON responses are transformed as well.
+
 Query params are transformed in the outgoing request, so `router.get('/users', { sortField: 'name' })` sends `?sort_field=name` to the server. The browser URL will show the snake_case form too — this is correct, since the URL matches what the server expects and page reloads work as expected. Array formats (`items[]=1`, `items[0]=1`) and bracket nesting are preserved as-is.
 
 ## Options
