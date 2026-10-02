@@ -154,6 +154,24 @@ setupCaseShift(http, { skipKeys: ['editorConfig'] })
 | Query params | `?editorConfig[bg]=red` | `?editorConfig[bg]=red` |
 | Response props | `{ editor_config: { bg: "red" } }` | `{ editor_config: { bg: "red" } }` |
 
+## Converting Other Data
+
+Data that doesn't go through Inertia's HTTP client, like websocket messages, needs converting by hand:
+
+```js
+import { toCamelCase, toSnakeCase, toCamelCasePath } from 'inertia-caseshift'
+
+consumer.subscriptions.create('ChatChannel', {
+  received: (data) => router.appendToProp('messages', toCamelCase(data)),
+})
+
+channel.send(toSnakeCase({ messageBody: 'Hi' })) // { message_body: 'Hi' }
+
+toCamelCasePath('user_stats.monthly_total') // 'userStats.monthlyTotal'
+```
+
+These helpers use the options passed to the Vite plugin or `setupCaseShift`, so `rawKeys` and `skipKeys` apply without repeating them. Pass options as the last argument to override them.
+
 ## Caveats
 
 Case conversion is lossy for acronym-style keys like `getHTTPSUrl` — the roundtrip produces `getHttpsUrl`. This only affects keys that mix uppercase acronyms with camelCase, which don't appear in the normal `snake_case` → `camelCase` flow.

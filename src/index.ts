@@ -2,7 +2,41 @@ export type { CaseShiftOptions } from './transforms'
 export { transformPageResponse } from './response'
 import { transformPageResponse } from './response'
 import { transformRequestData, transformRequestHeaders, transformRequestUrl } from './request'
-import { deepCamelCaseKeys, type CaseShiftOptions } from './transforms'
+import { camelCasePath, deepCamelCaseKeys, deepSnakeCaseKeys, type CaseShiftOptions } from './transforms'
+
+/** Options from the last `setupCaseShift` call, used by default in the helpers below. */
+let configuredOptions: CaseShiftOptions | undefined
+
+/**
+ * Convert data from the server to camelCase, e.g. a websocket payload.
+ * Uses the options passed to `setupCaseShift` (or the Vite plugin) by default.
+ *
+ * @example
+ *   consumer.subscriptions.create('ChatChannel', {
+ *     received: (data) => router.appendToProp('messages', toCamelCase(data)),
+ *   })
+ */
+export function toCamelCase<T = unknown>(data: unknown, options: CaseShiftOptions | undefined = configuredOptions): T {
+  return deepCamelCaseKeys(data, options) as T
+}
+
+/**
+ * Convert data for the server to snake_case, e.g. a websocket message.
+ * Uses the options passed to `setupCaseShift` (or the Vite plugin) by default.
+ */
+export function toSnakeCase<T = unknown>(data: unknown, options: CaseShiftOptions | undefined = configuredOptions): T {
+  return deepSnakeCaseKeys(data, options) as T
+}
+
+/**
+ * Convert a dot-notation prop path from the server to camelCase.
+ * Uses the options passed to `setupCaseShift` (or the Vite plugin) by default.
+ *
+ *   toCamelCasePath("user_stats.monthly_total") => "userStats.monthlyTotal"
+ */
+export function toCamelCasePath(path: string, options: CaseShiftOptions | undefined = configuredOptions): string {
+  return camelCasePath(path, options)
+}
 
 /**
  * Transform an Inertia page object in-place from snake_case to camelCase.
@@ -80,6 +114,8 @@ function transformResponseData(response: any, options?: CaseShiftOptions): void 
 }
 
 export function setupCaseShift(http: HttpInterface, options?: CaseShiftOptions): () => void {
+  configuredOptions = options
+
   const removeResponseHandler = http.onResponse((response: any) => {
     transformResponseData(response, options)
     return response
@@ -111,5 +147,6 @@ export function setupCaseShift(http: HttpInterface, options?: CaseShiftOptions):
     removeResponseHandler()
     removeErrorHandler?.()
     removeRequestHandler()
+    if (configuredOptions === options) configuredOptions = undefined
   }
 }
