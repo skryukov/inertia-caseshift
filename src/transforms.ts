@@ -55,15 +55,27 @@ export function snakeCase(str: string): string {
 /**
  * Transform each segment of a dot-notation path independently.
  * Numeric segments (array indices) are preserved as-is.
+ * Respects `rawKeys` and `skipKeys` the same way `deepCamelCaseKeys` does,
+ * so metadata paths keep matching the transformed props.
  *
  *   camelCasePath("user_stats.monthly_total") => "userStats.monthlyTotal"
  *   camelCasePath("items.0.user_id")          => "items.0.userId"
+ *   camelCasePath("editor_config.font_size", { skipKeys: ["editorConfig"] }) => "editor_config.font_size"
+ *   camelCasePath("editor_config.font_size", { rawKeys: ["editorConfig"] })  => "editorConfig.font_size"
  */
-export function camelCasePath(path: string): string {
-  return path
-    .split('.')
-    .map((segment) => (/^\d+$/.test(segment) ? segment : camelCase(segment)))
-    .join('.')
+export function camelCasePath(path: string, options?: CaseShiftOptions): string {
+  const segments = path.split('.')
+
+  for (let i = 0; i < segments.length; i++) {
+    if (/^\d+$/.test(segments[i])) continue
+
+    const key = camelCase(segments[i])
+    if (options?.skipKeys?.includes(key)) break
+    segments[i] = key
+    if (options?.rawKeys?.includes(key)) break
+  }
+
+  return segments.join('.')
 }
 
 /**
