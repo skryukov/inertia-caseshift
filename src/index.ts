@@ -72,7 +72,8 @@ function transformResponseData(response: any, options?: CaseShiftOptions): void 
 
   if (data && typeof data === 'object' && 'component' in data) {
     transformPageResponse(data, options)
-    response.data = data
+    // Hand strings back so Inertia's own parsing still revives big integers
+    response.data = wasString ? JSON.stringify(data) : data
   } else if (data && typeof data === 'object') {
     data = deepCamelCaseKeys(data, options)
     response.data = wasString ? JSON.stringify(data) : data
