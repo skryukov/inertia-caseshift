@@ -1,6 +1,6 @@
 {
   "name": "inertia-caseshift",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Automatic snake_case <-> camelCase conversion for Inertia.js — the snake charmer for your props",
   "type": "module",
   "exports": {
