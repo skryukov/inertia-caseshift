@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setupCaseShift, transformInitialPage } from '../src/index'
 
+// Inertia parses string response data itself after the handlers run
+function parseLikeInertia(data: any) {
+  if (typeof data !== 'string') return data
+  try {
+    return JSON.parse(data)
+  } catch {
+    return data
+  }
+}
+
 function createMockHttp() {
   const requestHandlers: Array<(config: any) => any> = []
   const responseHandlers: Array<(response: any) => any> = []
@@ -34,7 +44,7 @@ function createMockHttp() {
       for (const handler of responseHandlers) {
         result = await handler(result)
       }
-      return result
+      return { ...result, data: parseLikeInertia(result.data) }
     },
     async simulateRequest(config: any) {
       let result = config
@@ -113,6 +123,28 @@ describe('setupCaseShift', () => {
       // Keys are camelCased but data stays as a string so useHttp can JSON.parse it
       expect(typeof result.data).toBe('string')
       expect(JSON.parse(result.data)).toEqual({ someData: 'value', nestedObj: { innerKey: 1 } })
+    })
+
+    it('hands Inertia page responses back as a string so big integers can be revived', async () => {
+      setupCaseShift(http)
+
+      const response = {
+        status: 200,
+        data: JSON.stringify({
+          component: 'Orders/Show',
+          props: { order_id: { $bigint: '900719925474099988' } },
+          preserveBigIntegers: true,
+        }),
+        headers: {},
+      }
+      const result = await http.onResponse.mock.calls[0][0](response)
+
+      expect(typeof result.data).toBe('string')
+      expect(JSON.parse(result.data)).toEqual({
+        component: 'Orders/Show',
+        props: { orderId: { $bigint: '900719925474099988' } },
+        preserveBigIntegers: true,
+      })
     })
 
     it('handles non-JSON response data gracefully', async () => {
@@ -283,7 +315,7 @@ describe('setupCaseShift', () => {
         version: 'v1',
       })
 
-      expect(error.response.data.props.errors).toEqual({
+      expect(parseLikeInertia(error.response.data).props.errors).toEqual({
         firstName: "can't be blank",
         emailAddress: 'is invalid',
       })
