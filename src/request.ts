@@ -5,6 +5,7 @@ const PARTIAL_HEADERS = [
   'X-Inertia-Partial-Except',
   'X-Inertia-Reset',
   'X-Inertia-Except-Once-Props',
+  'Precognition-Validate-Only',
 ] as const
 
 /**
