@@ -5,7 +5,7 @@ on:
     tags: ['v*']
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -26,3 +28,14 @@ jobs:
       - run: npm run build
       # Uploads the version for approval on npmjs.com; it goes live once approved
       - run: npm stage publish
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          PREVIOUS=$(git describe --tags --abbrev=0 "$TAG^")
+          awk -v v="$VERSION" 'index($0, "## [" v "]") == 1 {p=1; next} /^## \[/ {p=0} p' CHANGELOG.md \
+            | sed -E 's/\[(#[0-9]+)\]\([^)]*\)/\1/g; s/\[(@[A-Za-z0-9-]+)\]/\1/g' > notes.md
+          printf '**Full Changelog**: https://github.com/%s/compare/%s...%s\n' "$GITHUB_REPOSITORY" "$PREVIOUS" "$TAG" >> notes.md
+          gh release create "$TAG" --title "$TAG" --notes-file notes.md
