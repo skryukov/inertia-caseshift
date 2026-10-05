@@ -9,11 +9,16 @@ const PARTIAL_HEADERS = [
 
 /**
  * Transform request body keys from camelCase to snake_case.
- * Handles plain objects and FormData field names.
+ * Handles plain objects, JSON strings, and FormData field names.
  */
 export function transformRequestData(data: unknown, options?: CaseShiftOptions): unknown {
   if (data instanceof FormData) {
     return transformFormData(data, options)
+  }
+
+  // useHttp serializes JSON bodies before the request handlers run
+  if (typeof data === 'string') {
+    return transformJsonString(data, options)
   }
 
   if (data && typeof data === 'object') {
@@ -21,6 +26,18 @@ export function transformRequestData(data: unknown, options?: CaseShiftOptions):
   }
 
   return data
+}
+
+function transformJsonString(json: string, options?: CaseShiftOptions): string {
+  let data: unknown
+  try {
+    data = JSON.parse(json)
+  } catch {
+    return json
+  }
+
+  if (!data || typeof data !== 'object') return json
+  return JSON.stringify(deepSnakeCaseKeys(data, options))
 }
 
 /**

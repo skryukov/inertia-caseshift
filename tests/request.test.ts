@@ -36,6 +36,30 @@ describe('transformRequestData', () => {
     })
   })
 
+  describe('JSON string body (useHttp)', () => {
+    it('snake_cases keys and re-serializes', () => {
+      const result = transformRequestData(JSON.stringify({ firstName: 'John', homeAddress: { zipCode: '1' } }))
+      expect(typeof result).toBe('string')
+      expect(JSON.parse(result as string)).toEqual({ first_name: 'John', home_address: { zip_code: '1' } })
+    })
+
+    it('snake_cases keys inside top-level arrays', () => {
+      expect(transformRequestData(JSON.stringify([{ userName: 'a' }]))).toBe('[{"user_name":"a"}]')
+    })
+
+    it('respects options', () => {
+      const result = transformRequestData(JSON.stringify({ editorConfig: { fontSize: 14 } }), {
+        rawKeys: ['editorConfig'],
+      })
+      expect(result).toBe('{"editor_config":{"fontSize":14}}')
+    })
+
+    it('returns JSON primitives as-is', () => {
+      expect(transformRequestData('"userName"')).toBe('"userName"')
+      expect(transformRequestData('42')).toBe('42')
+    })
+  })
+
   describe('FormData', () => {
     it('snake_cases FormData field names', () => {
       const fd = new FormData()
